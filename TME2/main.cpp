@@ -109,7 +109,7 @@ void word_count(const string& searched_word) {
 // struct
 class Pair {
 	public: 
-		const string key;
+		string key;
 		int value;
 		Pair(string key, int value): key(key), value(value){}
 };
@@ -277,8 +277,9 @@ void hashmap_to_vector(HashMap& hash, vector<Pair>& vect) {
 
 void sort_vector(vector<Pair>& vect) {
 	std::sort(vect.begin(), vect.end(), [] (const Pair& p1, const Pair& p2) {
-		return p1.value > p2.value;
+    	return p1.value > p2.value;
 	});
+
 	for (int i = 0; i < 10; i++) {
 		cout << i + 1 << ") " << vect[i].key << " = " << vect[i].value << endl;
 	}
