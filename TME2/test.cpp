@@ -104,33 +104,35 @@ void word_count(const string& searched_word) {
     cout << "Found a total of " << nombre_lu << " repeated words." << endl;
 }
 
-template <typename K, typename V> 
+// template<typename K, typename V>
+// template<typename T>
+
+// struct
 class Pair {
 	public: 
-		K key;
-		V value;
-		Pair(K key, V value): key(key), value(value){}
+		string key;
+		int value;
+		Pair(string key, int value): key(key), value(value){}
 };
 
-template <typename D>
+
 class Chainon {
 	public: 
-		D data;
+		Pair data;
 		Chainon* next;
-		Chainon(D data, Chainon* next = nullptr): data(data), next(next){}
+		Chainon(Pair data, Chainon* next = nullptr): data(data), next(next){}
 };
 
-template <typename P>
 class List {
 	public: 
-		Chainon<P>* tete;
+		Chainon* tete;
 		List(): tete(nullptr){}
-		void push_back(Chainon<P>& elt) {
+		void push_back(Chainon& elt) {
 			if (tete == nullptr) {
 				tete = &elt;
 				return;
 			}
-			Chainon<P>* ptr = tete;
+			Chainon* ptr = tete;
 			for (; ptr->next != nullptr; ptr = ptr->next) {}
 			ptr->next = &elt;
 		}
@@ -138,8 +140,8 @@ class List {
 			return tete == nullptr;
 		}
 		~List() {
-			Chainon<P>* ptr = tete;
-			Chainon<P>* tmp;
+			Chainon* ptr = tete;
+			Chainon* tmp;
 			while (ptr != nullptr) {
 				tmp = ptr->next;
 				delete ptr;
@@ -148,9 +150,8 @@ class List {
 		}
 };
 
-template <typename KT, typename VT>
 class HashMap {
-	vector<List<Pair<KT, VT>>> tab;
+	vector<List> tab;
 	size_t size;
 
 	public: 
@@ -158,19 +159,20 @@ class HashMap {
 			size = 256;
 			tab.resize(size);
 			for (size_t i = 0; i < size; i++) {
-				List<Pair<KT, VT>> list;
+				List list = List();
 				tab[i] = list;
 			}
+			// exit(0);
 		}
-		VT& get(KT key) {
-			size_t index = std::hash<KT>{}(key) % size;
-			auto& list = tab[index];
+		int& get(string key) {
+			size_t index = std::hash<string>{}(key) % size;
+			List& list = tab[index];
 			if (list.empty()) {
 				return zero;
 				// std::cout << "no such key as: " << key << std::endl;
 				// assert(false);
 			}
-			auto ptr = list.tete;
+			Chainon* ptr = list.tete;
 			while(ptr) {
 				if(ptr->data.key == key) 
 					return ptr->data.value;
@@ -180,16 +182,16 @@ class HashMap {
 			// std::cout << "no such key as: " << key << std::endl;
 			// assert(false);
 		}
-		void add(KT key) {
+		void add(string key) {
 			size_t index = std::hash<string>{}(key) % size;
-			auto& list = tab[index];
+			List& list = tab[index];
 			if(list.empty()) {
-				Pair<KT, VT> pair(key, 1);
-				Chainon<Pair<KT, VT>>* ch = new Chainon(pair);
+				Pair pair(key, 1);
+				Chainon* ch = new Chainon(pair);
 				list.push_back(*ch);
 			}
 			else {
-				auto ptr = list.tete;
+				Chainon* ptr = list.tete;
 				while(ptr) {
 					if(ptr->data.key == key) {
 						ptr->data.value++;
@@ -197,24 +199,30 @@ class HashMap {
 					}
 					ptr = ptr->next;
 				}
-				Pair<KT, VT> pair(key, 1);
-				Chainon<Pair<KT, VT>>* ch = new Chainon(pair);
+				Pair pair(key, 1);
+				Chainon* ch = new Chainon(pair);
 				list.push_back(*ch);
 			}
 		}
 		size_t get_size() {
 			return size;
 		}
-		int& operator[](KT key) {
+		int& operator[](string key) {
 			return get(key);
 		}
-		auto& operator[](size_t index) {
+		List& operator[](size_t index) {
 			return tab[index];
+		}
+		void test() {
+			Chainon* ptr = tab[100].tete;
+			while (ptr) {
+				std::cout << ptr->data.key << " = " << ptr->data.value << std::endl;
+				ptr = ptr->next;
+			}
 		}
 };
 
-
-void word_count_distinct_with_hashmap(HashMap<string, int>& hash) {
+void word_count_distinct_with_hashmap(HashMap& hash) {
 	ifstream input = ifstream("./WarAndPeace.txt");
 	// HashMap hash;
 	// exit(0);
@@ -254,9 +262,13 @@ void word_count_distinct_with_hashmap(HashMap<string, int>& hash) {
 	cout << hash["war"] << ", " << hash["peace"] << ", " << hash["toto"] << endl;
 }
 
-void hashmap_to_vector(HashMap<string, int>& hash, vector<Pair<string, int>>& vect) {
+void test() {
+
+}
+
+void hashmap_to_vector(HashMap& hash, vector<Pair>& vect) {
 	for (size_t i = 0; i < hash.get_size(); i++) {
-		auto ptr = hash[i].tete;
+		Chainon* ptr = hash[i].tete;
 		while(ptr) {
 			vect.push_back(ptr->data);
 			ptr = ptr->next;
@@ -264,8 +276,8 @@ void hashmap_to_vector(HashMap<string, int>& hash, vector<Pair<string, int>>& ve
 	}
 }
 
-void sort_vector(vector<Pair<string, int>>& vect) {
-	std::sort(vect.begin(), vect.end(), [] (const Pair<string, int>& p1, const Pair<string, int>& p2) {
+void sort_vector(vector<Pair>& vect) {
+	std::sort(vect.begin(), vect.end(), [] (const Pair& p1, const Pair& p2) {
     	return p1.value > p2.value;
 	});
 
@@ -274,10 +286,9 @@ void sort_vector(vector<Pair<string, int>>& vect) {
 	}
 }
 
-
 int main () {
-	vector<Pair<string, int>> vect;
-	HashMap<string, int> hash;
+	vector<Pair> vect;
+	HashMap hash;
 	word_count_distinct_with_hashmap(hash);
 	hashmap_to_vector(hash, vect);
 	sort_vector(vect);
