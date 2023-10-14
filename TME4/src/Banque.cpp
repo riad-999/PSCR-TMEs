@@ -51,15 +51,15 @@ namespace pr {
 			bilan += compte.getSolde();
 			id++;
 		}
+		for (auto & compte : comptes) {
+			recursive_mutex& m = compte.get_mutex();
+			m.unlock();
+		}
 		if (bilan != attendu) {
 			cout << "Bilan comptable faux : attendu " << attendu << " obtenu : " << bilan << endl;
 		}
 		else {
-			cout << "Bilan comptable Correcte : attendu " << attendu << " obtenu : " << bilan << endl;	
-		}
-		for (auto & compte : comptes) {
-			recursive_mutex& m = compte.get_mutex();
-			m.unlock();
+			cout << "Bilan comptable Correcte` : attendu " << attendu << " obtenu : " << bilan << endl;	
 		}
 		return bilan == attendu;
 	}
