@@ -23,6 +23,24 @@ bool exists(vector<string>& words, const string& word) {
 	return false;
 }
 
+template <typename Iterator>
+size_t count(Iterator begin, Iterator end) {
+	size_t cnt = 0;
+	for (Iterator it = begin; it != end; ++it) 
+		++cnt;
+	return cnt;
+}
+
+template <typename Iterator_, typename T>
+size_t count_equal(Iterator_ begin, Iterator_ end, T& val) {
+	size_t cnt = 0; 
+	for (Iterator_ it = begin; it != end; ++it) {
+		if (*it == val)
+			++cnt;
+	}
+	return cnt;
+}
+
 void word_count_distinct() {
 	ifstream input = ifstream("./WarAndPeace.txt");
 	vector<string> words;
@@ -53,9 +71,6 @@ void word_count_distinct() {
 	}
 	input.close();
 
-	cout << words.size() << endl;
-	cout << words[3] << endl;
-
 	cout << "Finished Parsing War and Peace" << endl;
 
 	auto end = steady_clock::now();
@@ -64,6 +79,10 @@ void word_count_distinct() {
               << "ms.\n";
 
     cout << "Found a total of " << nombre_lu << " diffrent words." << endl;
+
+	string war = "war";
+	cout << "size of container: " << words.size() << "count: " << count(words.begin(), words.end()) << endl;
+	cout << "number: " << nombre_lu << ", count: " << count_equal(words.begin(), words.end(), war) << endl;
 }
 
 void word_count(const string& searched_word) {
@@ -85,7 +104,6 @@ void word_count(const string& searched_word) {
 		transform(word.begin(),word.end(),word.begin(),::tolower);
 
 		if (word == searched_word) {
-			words.push_back(word);
 			nombre_lu++;
 		}
 	}
@@ -211,6 +229,29 @@ class HashMap {
 		auto& operator[](size_t index) {
 			return tab[index];
 		}
+		class Iterator {
+			vector<List<Pair<KT, VT>>>& tab;
+			size_t index;
+			Chainon<Pair<KT, VT>>* it;
+
+			Iterator(vector<List<Pair<KT, VT>>>& t, size_t ind = 0, Chainon<Pair<KT, VT>>* i = nullptr): tab(t), index(ind), it(i) {} 
+
+		};
+		Iterator begin() {
+			Iterator iter(tab, 0, tab[0].tete);
+			return iter;
+		};
+		Iterator end() {
+			Chainon<Pair<KT, VT>>* ptr = nullptr;
+			Chainon<Pair<KT, VT>>* end = ptr;
+			ptr = tab[tab.size() - 1].tete;
+			while(ptr){
+				end = ptr;
+				ptr = ptr->next;
+			}
+			Iterator iter(tab, tab[tab.size() - 1], tab[0].tete, end);
+			return iter;
+		};
 };
 
 
@@ -274,12 +315,20 @@ void sort_vector(vector<Pair<string, int>>& vect) {
 	}
 }
 
-
-int main () {
+void tme2() {
 	vector<Pair<string, int>> vect;
 	HashMap<string, int> hash;
 	word_count_distinct_with_hashmap(hash);
 	hashmap_to_vector(hash, vect);
 	sort_vector(vect);
+}
+
+void tme3_1() {
+	word_count_distinct();
+
+}
+
+int main () {
+	tme3_1();
     return 0;
 }
