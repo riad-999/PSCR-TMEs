@@ -236,15 +236,41 @@ class HashMap {
 
 			Iterator(vector<List<Pair<KT, VT>>>& t, size_t ind = 0, Chainon<Pair<KT, VT>>* i = nullptr): tab(t), index(ind), it(i) {} 
 
+			Pair<KT, VT>& operator*() {
+				return it->data;
+			}
+			Iterator operator++() {
+				if (!it || !it->next) {
+					while((!it || !it->next) && index < tab.size() - 1) {
+						index++;
+						it = tab[index].tete;
+					}
+					if(!it)
+						cout << "segmentation error!" << endl;
+						exit(1);
+					return it;
+				}
+				else {
+					return it->next;
+				}
+			}
+			bool operator!=(Iterator& it) {
+				return this != it;
+			}
 		};
 		Iterator begin() {
 			Iterator iter(tab, 0, tab[0].tete);
 			return iter;
 		};
 		Iterator end() {
-			Chainon<Pair<KT, VT>>* ptr = nullptr;
-			Chainon<Pair<KT, VT>>* end = ptr;
-			ptr = tab[tab.size() - 1].tete;
+			Chainon<Pair<KT, VT>>* ptr;
+			Chainon<Pair<KT, VT>>* end = nullptr;
+			size_t i = 1;
+			ptr = tab[tab.size() - i].tete;
+			while(!ptr && tab.size() - i > 0) {
+				i++;
+				ptr = tab[tab.size() - i].tete;
+			}
 			while(ptr){
 				end = ptr;
 				ptr = ptr->next;
@@ -324,8 +350,10 @@ void tme2() {
 }
 
 void tme3_1() {
-	word_count_distinct();
-
+	// word_count_distinct();
+	vector<Pair<string, int>> vect;
+	HashMap<string, int> hash;
+	word_count_distinct_with_hashmap(hash);
 }
 
 int main () {
