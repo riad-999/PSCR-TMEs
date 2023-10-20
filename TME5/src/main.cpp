@@ -6,6 +6,11 @@
 #include <fstream>
 #include <limits>
 #include <random>
+#include <string>
+#include <cstring>
+#include <mutex>
+#include <condition_variable> 
+#include <thread>
 
 using namespace std;
 using namespace pr;
@@ -98,10 +103,166 @@ void exportImage(const char * path, size_t width, size_t height, Color * pixels)
 	img.close();
 }
 
+template <typename T>
+class Queue {
+    T ** tab;
+	recursive_mutex m;
+	condition_variable_any cv;
+	bool isBlocking;
+    const size_t allocsize;
+    size_t begin;
+    size_t sz;
+public :
+    Queue (size_t maxsize) :allocsize(maxsize),begin(0),sz(0), isBlocking(true) {
+        tab = new T* [maxsize];
+        memset(tab, 0, maxsize * sizeof(T*));
+    } 
+	void setBlocking(bool b) {
+		unique_lock<recursive_mutex> l(m);
+		isBlocking = b;
+		cv.notify_all();
+	}
+	size_t size() {
+		unique_lock<recursive_mutex> l(m);
+		return sz;
+	}
+
+	T* pop() {
+		// cout << "waiting mutex" << endl;
+		unique_lock<recursive_mutex> l(m);
+		// cout << "got mutex" << endl;
+		while (empty() && isBlocking) {
+			// cout << "waiting" << endl;
+			cv.wait(l);
+		}
+		if (!isBlocking && empty()) {
+			// cout << "not blocking" << endl;
+			return nullptr;
+		}
+		T* ret = tab[begin];
+		tab[begin] = nullptr;
+		sz--;
+		begin = (begin + 1) % allocsize;
+		cv.notify_one();
+		return ret;
+	}
+
+	bool push(T* elt) {
+		unique_lock<recursive_mutex> l(m);
+		while(full() && isBlocking)
+			cv.wait(l);
+		if(!isBlocking && full())
+			return false;
+		tab[(begin + sz) % allocsize] = elt;
+		sz++;
+		cv.notify_one();
+	}
+
+	bool full(){
+		unique_lock<recursive_mutex> l(m);
+        return sz == allocsize;
+    }
+
+    bool empty() {
+		unique_lock<recursive_mutex> l(m);
+        return sz == 0;
+    }
+
+	~Queue() {
+		unique_lock<recursive_mutex> l(m);
+		for (size_t i = 0; i < sz; i++) {
+			size_t ind = (begin + i) % allocsize;
+			delete tab[ind];
+		}
+		delete[] tab;
+	}
+};
+
+
+class Job {
+public:
+    virtual void run () = 0;
+    virtual ~Job() {};
+};
+
+class DrawJob: public Job {
+	int x;
+	int y;
+	Scene& scene;
+	vector<Vec3D>& lights;
+	Color* pixels;
+	const Scene::screen_t& screen;
+public: 
+	DrawJob(int x, int y, Scene& scene, vector<Vec3D>& lights, Color* pixels,const Scene::screen_t& screen): 
+	x(x), y(y), scene(scene), lights(lights), pixels(pixels), screen(screen) {}
+
+	void run() {
+		// le point de l'ecran par lequel passe ce rayon
+		auto & screenPoint = screen[y][x];
+		// le rayon a inspecter
+		Rayon  ray(scene.getCameraPos(), screenPoint);
+
+		int targetSphere = findClosestInter(scene, ray);
+
+		if (targetSphere == -1) {
+			// keep background color
+			return;
+		} else {
+			const Sphere & obj = *(scene.begin() + targetSphere);
+			// pixel prend la couleur de l'objet
+			Color finalcolor = computeColor(obj, ray, scene.getCameraPos(), lights);
+			// le point de l'image (pixel) dont on vient de calculer la couleur
+			Color & pixel = pixels[y*scene.getHeight() + x];
+			// mettre a jour la couleur du pixel dans l'image finale.
+			pixel = finalcolor;
+		}
+	}
+};
+
+void poolworker(Queue<Job>& queue) {
+	while(true) {
+		Job* j = queue.pop();
+		if (j == nullptr)
+			break;
+		j->run();
+		delete j;
+	}
+}
+
+class Pool {
+    Queue<Job> queue;
+    vector<thread> threads;
+public:
+    Pool(size_t qsize): queue(qsize){}
+
+    void start (int nbthread) {
+		threads.reserve(nbthread);
+		for(size_t i = 0; i < nbthread; ++i) {
+			// cout << "got mutex" << endl;
+			threads.emplace_back(poolworker, ref(queue));
+		}
+	}
+    void submit (Job* job) {
+		queue.push(job);
+	}
+    void stop() {
+		queue.setBlocking(false);
+		for (size_t i = 0; i < threads.size(); ++i) {
+			threads[i].join();
+		}
+		threads.clear();
+	}
+	
+    ~Pool() {
+		stop();
+	}
+};
+
 // NB : en francais pour le cours, preferez coder en english toujours.
 // pas d'accents pour eviter les soucis d'encodage
 
 int main () {
+	Pool pool(2000);
 
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	// on pose une graine basee sur la date
@@ -125,29 +286,12 @@ int main () {
 	// Les couleurs des pixels dans l'image finale
 	Color * pixels = new Color[scene.getWidth() * scene.getHeight()];
 
+	pool.start(8);
+
 	// pour chaque pixel, calculer sa couleur
 	for (int x =0 ; x < scene.getWidth() ; x++) {
 		for (int  y = 0 ; y < scene.getHeight() ; y++) {
-			// le point de l'ecran par lequel passe ce rayon
-			auto & screenPoint = screen[y][x];
-			// le rayon a inspecter
-			Rayon  ray(scene.getCameraPos(), screenPoint);
-
-			int targetSphere = findClosestInter(scene, ray);
-
-			if (targetSphere == -1) {
-				// keep background color
-				continue ;
-			} else {
-				const Sphere & obj = *(scene.begin() + targetSphere);
-				// pixel prend la couleur de l'objet
-				Color finalcolor = computeColor(obj, ray, scene.getCameraPos(), lights);
-				// le point de l'image (pixel) dont on vient de calculer la couleur
-				Color & pixel = pixels[y*scene.getHeight() + x];
-				// mettre a jour la couleur du pixel dans l'image finale.
-				pixel = finalcolor;
-			}
-
+			pool.submit(new DrawJob(x, y, scene, lights, pixels, screen));
 		}
 	}
 
