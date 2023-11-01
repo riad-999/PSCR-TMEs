@@ -128,15 +128,11 @@ public :
 	}
 
 	T* pop() {
-		// cout << "waiting mutex" << endl;
 		unique_lock<recursive_mutex> l(m);
-		// cout << "got mutex" << endl;
 		while (empty() && isBlocking) {
-			// cout << "waiting" << endl;
 			cv.wait(l);
 		}
 		if (!isBlocking && empty()) {
-			// cout << "not blocking" << endl;
 			return nullptr;
 		}
 		T* ret = tab[begin];
@@ -238,7 +234,6 @@ public:
     void start (int nbthread) {
 		threads.reserve(nbthread);
 		for(size_t i = 0; i < nbthread; ++i) {
-			// cout << "got mutex" << endl;
 			threads.emplace_back(poolworker, ref(queue));
 		}
 	}
@@ -286,12 +281,13 @@ int main () {
 	// Les couleurs des pixels dans l'image finale
 	Color * pixels = new Color[scene.getWidth() * scene.getHeight()];
 
-	pool.start(8);
-
-	// pour chaque pixel, calculer sa couleur
-	for (int x =0 ; x < scene.getWidth() ; x++) {
-		for (int  y = 0 ; y < scene.getHeight() ; y++) {
-			pool.submit(new DrawJob(x, y, scene, lights, pixels, screen));
+	{
+		pool.start(8);
+		// pour chaque pixel, calculer sa couleur
+		for (int x =0 ; x < scene.getWidth() ; x++) {
+			for (int  y = 0 ; y < scene.getHeight() ; y++) {
+				pool.submit(new DrawJob(x, y, scene, lights, pixels, screen));
+			}
 		}
 	}
 
