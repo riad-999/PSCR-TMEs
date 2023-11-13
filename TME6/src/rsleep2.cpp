@@ -7,6 +7,8 @@
 #include "rsleep.h"
 
 int points = 10;
+sigset_t sig;
+sigset_t sigpos;
 
 void randsleep() {
   int r = rand();
@@ -32,8 +34,13 @@ void handler(int signum) {
   }
 }
 
+void handler2(int signum) {
+  std::cout << "process " << getpid() << " hit paried" << std::endl;
+}
+
 void attack(pid_t pid) {
   signal(SIGUSR1, handler);
+  sigprocmask(SIG_UNBLOCK, &sig, nullptr);
   if(kill(pid, SIGUSR1) < 0) {
     std::cout << "process " << getpid() << " won the fight " << std::endl;
     exit(0);
@@ -42,8 +49,10 @@ void attack(pid_t pid) {
 }
 
 void defense() {
-  signal(SIGUSR1, SIG_IGN);
+  sigprocmask(SIG_BLOCK, &sig, nullptr);
+  signal(SIGUSR1, handler2);
   randsleep();
+  sigsuspend(&sigpos);
 }
 
 void combat(pid_t pid) {
@@ -54,6 +63,11 @@ void combat(pid_t pid) {
 }
 
 int main() {
+  sigemptyset(&sig);
+  sigaddset(&sig, SIGUSR1);
+  sigfillset(&sigpos);
+  sigdelset(&sigpos, SIGUSR1);
+
   pid_t main_pid = getpid();
 
   pid_t pid = fork();
