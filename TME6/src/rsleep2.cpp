@@ -40,7 +40,8 @@ void handler2(int signum) {
 
 void attack(pid_t pid) {
   signal(SIGUSR1, handler);
-  sigprocmask(SIG_UNBLOCK, &sig, nullptr);
+  // sigprocmask(SIG_UNBLOCK, &sig, nullptr);
+  std::cout << "sig sent" << std::endl;
   if(kill(pid, SIGUSR1) < 0) {
     std::cout << "process " << getpid() << " won the fight " << std::endl;
     exit(0);
@@ -49,7 +50,7 @@ void attack(pid_t pid) {
 }
 
 void defense() {
-  sigprocmask(SIG_BLOCK, &sig, nullptr);
+  // sigprocmask(SIG_BLOCK, &sig, nullptr);
   signal(SIGUSR1, handler2);
   randsleep();
   sigsuspend(&sigpos);
@@ -57,14 +58,15 @@ void defense() {
 
 void combat(pid_t pid) {
   while (true) {
-    defense();
     attack(pid);
+    defense();
   }
 }
 
 int main() {
-  sigemptyset(&sig);
-  sigaddset(&sig, SIGUSR1);
+  // sigemptyset(&sig);
+  // sigaddset(&sig, SIGUSR1);
+
   sigfillset(&sigpos);
   sigdelset(&sigpos, SIGUSR1);
 

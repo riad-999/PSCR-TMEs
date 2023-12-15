@@ -22,8 +22,6 @@ void randsleep() {
 }
 
 void handler(int signum) {
-  if (signum != SIGUSR1)
-    return;
   points--;
   std::cout << "process " << getpid() << " points left = " << points << std::endl;
   if (points == 0) {
@@ -34,7 +32,8 @@ void handler(int signum) {
 
 void attack(pid_t pid) {
   signal(SIGUSR1, handler);
-  if(kill(pid, SIGUSR1) < 0) {
+  std::cout << "" ;
+  if(kill(pid, SIGUSR1) != 0) {
     std::cout << "process " << getpid() << " won the fight " << std::endl;
     exit(0);
   };
