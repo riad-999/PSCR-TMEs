@@ -40,9 +40,6 @@ int main(int argc, char const* argv[])
         new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
         read(new_socket, &cmd, sizeof(int)); // subtract 1 for the null terminator at the end
         std::cout << "command: " << cmd << std::endl;
-		// size = sizeof(char) * strlen(hello);
-        // write(new_socket, &size, sizeof(int));
-		// write(new_socket, hello, size);
 
 		char buffer[1024];
 		int bytesRead = 0;
@@ -71,6 +68,7 @@ int main(int argc, char const* argv[])
 			read(new_socket, &size, sizeof(int));
 			read(new_socket, filename, size);
 
+			std::cout << filename << std::endl;
 			std::ifstream file(filename, std::ios::binary);
 			file.seekg(0, std::ios::end);
 			std::streampos fileSize = file.tellg();
@@ -104,9 +102,5 @@ int main(int argc, char const* argv[])
 		}
     }
 
-	// closing the connected socket
-	// close(new_socket);
-	// // closing the listening socket
-	// close(server_fd);
 	return 0;
 }

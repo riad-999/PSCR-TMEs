@@ -1,12 +1,12 @@
 client.cpp
 client-program
 ConnectionHandler.h
+downloads
 ftp-client.cpp
 ftp-server.cpp
 Job.h
 Makefile.am
 Pool.h
-program
 program_client
 program_server
 Queue.h
@@ -17,3 +17,4 @@ server-program
 ServerSocket.h
 Socket.h
 TCPServer.h
+uploads

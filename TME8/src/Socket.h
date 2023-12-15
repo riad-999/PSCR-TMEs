@@ -3,7 +3,22 @@
 
 #include <netinet/ip.h>
 #include <string>
+#include <iostream>
 #include <iosfwd>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+
+std::ostream& operator << (std::ostream& os, struct addr_in* adr) {
+	char host[1024];
+	getnameinfo((struct sockaddr*) adr, sizeof(adr), host, 1024,
+	nullptr, 0, 0);
+	os << "host" << host << std::endl;
+	std::cout << met_ntoa(adr->sin_addr) << ":" << ntohs(adr->sin_port) << std::end;
+	return os;
+}
+
+
 
 namespace pr {
 
