@@ -152,6 +152,7 @@ public :
 		tab[(begin + sz) % allocsize] = elt;
 		sz++;
 		cv.notify_one();
+		return true;
 	}
 
 	bool full(){
